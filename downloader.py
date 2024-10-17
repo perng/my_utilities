@@ -6,6 +6,7 @@ import os
 from urllib.parse import urljoin
 import sys
 import re
+import opencc
 
 def download_image(url, folder, min_size_kb=100):
     """
@@ -34,16 +35,18 @@ def download_image(url, folder, min_size_kb=100):
 
 def get_page_title(soup):
     """
-    Extract the title of the page from the HTML.
+    Extract the title of the page from the HTML and convert it to traditional Chinese.
     First, try to get the <title> tag content, then fall back to the first <h1> tag.
     If neither is found, return "Untitled".
     """
+    converter = opencc.OpenCC('s2t.json')  # Simplified to Traditional converter
+    
     title_tag = soup.find('title')
     if title_tag:
-        return title_tag.string.strip()
+        return converter.convert(title_tag.string.strip())
     h1_tag = soup.find('h1')
     if h1_tag:
-        return h1_tag.string.strip()
+        return converter.convert(h1_tag.string.strip())
     return "Untitled"
 
 def get_next_url(soup, current_url):
