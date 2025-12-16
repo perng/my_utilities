@@ -8,7 +8,7 @@ import sys
 import re
 import opencc
 
-def download_image(url, folder, min_size_kb=100):
+def download_image(url, folder, min_size_kb=25):
     """
     Download an image from the given URL and save it to the specified folder.
     Skip images smaller than min_size_kb and those that already exist.
@@ -30,8 +30,11 @@ def download_image(url, folder, min_size_kb=100):
             with open(img_path, 'wb') as f:
                 for chunk in img_response.iter_content(1024):
                     f.write(chunk)
+        else:
+            print(f"Skipping small image ({img_size_kb:.2f} KB): {url}")
     except Exception as e:
         print(f"Failed to download image {url}: {e}")
+
 
 def get_page_title(soup):
     """
@@ -90,7 +93,7 @@ def get_next_url(soup, current_url):
             return urljoin(current_url, href)
     return None
 
-def download_images(start_url):
+def download_images(start_url, min_size_kb=25):
     """
     Main function to download images from a series of web pages.
     Start from the given URL, download images, then move to the next page until no more pages are found.
@@ -124,7 +127,7 @@ def download_images(start_url):
             if img_src:
                 img_url = urljoin(url, img_src)
                 if img_url.startswith('http'):
-                    download_image(img_url, output_folder)
+                    download_image(img_url, output_folder, min_size_kb)
 
         # Find the URL of the next page
         next_url = get_next_url(soup, url)
@@ -144,12 +147,21 @@ def download_images(start_url):
         soup = BeautifulSoup(response.content, 'html.parser')
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: python downloader.py [START_URL]")
+    if len(sys.argv) < 2:
+        print("Usage: python downloader.py [START_URL] [MIN_SIZE_KB]")
         sys.exit(1)
 
     start_url = sys.argv[1]
-    download_images(start_url)
+    min_size_kb = 25
+    
+    if len(sys.argv) > 2:
+        try:
+            min_size_kb = float(sys.argv[2])
+        except ValueError:
+            print("Error: MIN_SIZE_KB must be a number")
+            sys.exit(1)
+            
+    download_images(start_url, min_size_kb)
 
 """
 This script downloads images from a series of web pages, starting from a given URL.
