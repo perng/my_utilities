@@ -107,6 +107,8 @@ def download_images(start_url):
     
     if not os.path.exists(output_folder):
         os.makedirs(output_folder, exist_ok=True)
+    
+    print(f"Output folder: {output_folder}")
 
     url = start_url
 
