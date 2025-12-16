@@ -53,10 +53,41 @@ def get_next_url(soup, current_url):
     """
     Find the URL of the next page by looking for a link with the text "下一页" (Next Page).
     Return None if no such link is found.
+    Handles both standard hrefs and javascript:ContentPageHref pagination.
     """
     next_link = soup.find('a', string='下一页')
     if next_link and 'href' in next_link.attrs:
-        return urljoin(current_url, next_link['href'])
+        href = next_link['href']
+        
+        # Handle JavaScript pagination
+        if href.startswith('javascript:ContentPageHref'):
+            try:
+                # Extract the URL template from the function call
+                # Expected format ends with: , 'template');
+                match = re.search(r",\s*'([^']*)'\);?$", href)
+                if match:
+                    url_template = match.group(1)
+                    
+                    # Determine current page number from current_url
+                    page_match = re.search(r"_(\d+)\.html$", current_url)
+                    if page_match:
+                        current_page = int(page_match.group(1))
+                    else:
+                        # Assuming start page is page 1
+                        current_page = 1
+                    
+                    next_page = current_page + 1
+                    
+                    # Generate next URL
+                    if '[page]' in url_template:
+                        next_relative = url_template.replace('[page]', str(next_page))
+                        return urljoin(current_url, next_relative)
+            except Exception as e:
+                print(f"Warning: Failed to parse Javascript link: {e}")
+                return None
+                
+        else:
+            return urljoin(current_url, href)
     return None
 
 def download_images(start_url):
