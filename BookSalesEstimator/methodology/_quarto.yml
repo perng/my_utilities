@@ -1,0 +1,14 @@
+project:
+  type: website
+
+website:
+  title: "Sales Estimation Methodology"
+  navbar:
+    left:
+      - href: index.qmd
+        text: Methodology
+format:
+  html:
+    theme: cosmo
+    css: styles.css
+    toc: true

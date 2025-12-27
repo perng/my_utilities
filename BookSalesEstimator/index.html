@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全台電腦書銷量總估算器 （試用版）</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-bg: #eef2ff;
+            --secondary: #64748b;
+            --accent-green: #10b981;
+            --accent-yellow: #f59e0b;
+            --accent-red: #ef4444;
+
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --border: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: #1e293b;
+            padding: 24px;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .header h1 {
+            font-size: 1.75rem;
+            color: #0f172a;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .grid-layout {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 24px;
+        }
+
+        @media (max-width: 850px) {
+            .grid-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* --- Input Panel --- */
+        .input-panel {
+            background: white;
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            height: fit-content;
+        }
+
+        .platform-group {
+            margin-bottom: 24px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 20px;
+        }
+
+        .platform-group:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .p-title {
+            font-weight: 700;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            font-size: 1rem;
+        }
+
+        .p-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 8px;
+            color: white;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+
+        .rank-row {
+            margin-bottom: 12px;
+        }
+
+        .rank-label {
+            font-size: 0.85rem;
+            color: var(--secondary);
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .select-wrapper {
+            position: relative;
+        }
+
+        select {
+            width: 100%;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            font-size: 0.9rem;
+            color: #334155;
+            cursor: pointer;
+            appearance: none;
+        }
+
+        select:hover {
+            border-color: #94a3b8;
+        }
+
+        select:focus {
+            outline: 2px solid var(--primary);
+            border-color: var(--primary);
+        }
+
+        /* --- Dashboard Panel --- */
+        .dashboard-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Current Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+
+        .stat-title {
+            font-size: 0.85rem;
+            color: var(--secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+        }
+
+        .stat-val {
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: #0f172a;
+        }
+
+        .stat-unit {
+            font-size: 0.9rem;
+            color: var(--secondary);
+            font-weight: 500;
+        }
+
+        /* Annual Forecast Section */
+        .forecast-card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border);
+        }
+
+        .forecast-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .f-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+        }
+
+        .scenario-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
+        }
+
+        @media (max-width: 600px) {
+            .scenario-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .scenario-box {
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid transparent;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+
+        .scenario-box:hover {
+            transform: translateY(-2px);
+        }
+
+        /* Scenario Themes */
+        .sc-conservative {
+            background: #fff1f2;
+            border-color: #fecdd3;
+        }
+
+        .sc-likely {
+            background: #eff6ff;
+            border-color: #bfdbfe;
+        }
+
+        .sc-optimistic {
+            background: #f0fdf4;
+            border-color: #bbf7d0;
+        }
+
+        .sc-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .sc-conservative .sc-label {
+            color: #be123c;
+        }
+
+        .sc-likely .sc-label {
+            color: #1d4ed8;
+        }
+
+        .sc-optimistic .sc-label {
+            color: #15803d;
+        }
+
+        .sc-val {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-bottom: 4px;
+            color: #0f172a;
+        }
+
+        .sc-desc {
+            font-size: 0.8rem;
+            color: #475569;
+            line-height: 1.4;
+        }
+
+        /* Breakdown Details */
+        .details-wrapper {
+            margin-top: 24px;
+            font-size: 0.9rem;
+            background: #f8fafc;
+            padding: 16px;
+            border-radius: 8px;
+            color: var(--secondary);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>📊 全台電腦書銷量總估算器 （試用版）</h1>
+            <p>整合雙週期趨勢與年度生命週期預測模型 (<a href="methodology/_site/index.html" target="_blank">模型解說</a>)</p>
+        </div>
+
+        <div class="grid-layout">
+
+            <!-- Input Panel -->
+            <div class="input-panel">
+                <p style="margin-bottom: 20px; font-weight: 500; font-size: 0.95rem; color: #334155;">👇 請選擇各通路排名區間：</p>
+                <div class="platform-group">
+                    <div class="p-title"><span class="p-icon" style="background:#84cc16">B</span>博客來</div>
+                    <div class="rank-row">
+                        <span class="rank-label">7日榜排名</span>
+                        <div class="select-wrapper">
+                            <select id="b7" onchange="updateCalc()"></select>
+                        </div>
+                    </div>
+                    <div class="rank-row">
+                        <span class="rank-label">30日榜排名</span>
+                        <div class="select-wrapper">
+                            <select id="b30" onchange="updateCalc()"></select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="platform-group">
+                    <div class="p-title"><span class="p-icon" style="background:#d97706">E</span>誠品</div>
+                    <div class="rank-row">
+                        <span class="rank-label">7日榜排名</span>
+                        <div class="select-wrapper">
+                            <select id="e7" onchange="updateCalc()"></select>
+                        </div>
+                    </div>
+                    <div class="rank-row">
+                        <span class="rank-label">30日榜排名</span>
+                        <div class="select-wrapper">
+                            <select id="e30" onchange="updateCalc()"></select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="platform-group">
+                    <div class="p-title"><span class="p-icon" style="background:#0ea5e9">T</span>天瓏</div>
+                    <div class="rank-row">
+                        <span class="rank-label">7日榜排名</span>
+                        <div class="select-wrapper">
+                            <select id="t7" onchange="updateCalc()"></select>
+                        </div>
+                    </div>
+                    <div class="rank-row">
+                        <span class="rank-label">30日榜排名</span>
+                        <div class="select-wrapper">
+                            <select id="t30" onchange="updateCalc()"></select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard Panel -->
+            <div class="dashboard-panel">
+
+                <!-- Short Term Stats -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-title">過去 7 天總推估</div>
+                        <div class="stat-val" id="val-7">0</div>
+                        <div class="stat-unit">本 / 週</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-title">過去 30 天總推估</div>
+                        <div class="stat-val" style="color:#d97706" id="val-30">0</div>
+                        <div class="stat-unit">本 / 月</div>
+                    </div>
+                </div>
+
+                <!-- Annual Forecast -->
+                <div class="forecast-card">
+                    <div class="forecast-header">
+                        <div class="f-title">📅 未來一年總銷量預估 (1 Year Forecast)</div>
+                    </div>
+
+                    <div class="scenario-grid">
+                        <!-- Conservative -->
+                        <div class="scenario-box sc-conservative">
+                            <span class="sc-label">保守估計 (Conservative)</span>
+                            <div class="sc-val" id="f-cons">0</div>
+                            <div class="sc-desc">假設為短期熱度，3個月後銷量快速衰退 (-50%)。</div>
+                        </div>
+
+                        <!-- Likely -->
+                        <div class="scenario-box sc-likely">
+                            <span class="sc-label">最可能 (Likely)</span>
+                            <div class="sc-val" id="f-likely">0</div>
+                            <div class="sc-desc">符合一般技術書長尾曲線，緩步衰退，維持穩定基本盤。</div>
+                        </div>
+
+                        <!-- Optimistic -->
+                        <div class="scenario-box sc-optimistic">
+                            <span class="sc-label">樂觀估計 (Optimistic)</span>
+                            <div class="sc-val" id="f-opt">0</div>
+                            <div class="sc-desc">成為領域教科書或常備書，整年維持目前 80% 以上量能。</div>
+                        </div>
+                    </div>
+
+                    <div class="details-wrapper">
+                        <strong>💡 預估分析說明：</strong>
+                        <ul style="margin-left: 20px; margin-top: 8px;">
+                            <li>計算基礎：以目前的「30天總推估」為基準月 (M1)。</li>
+                            <li>保守：M1 × 6 (首月效應明顯，後繼無力)</li>
+                            <li>最可能：M1 × 9 (標準長尾，逐漸緩跌)</li>
+                            <li>樂觀：M1 × 11 (全年熱銷，幾乎無衰退)</li>
+                            <li style="margin-top:4px">此預估已包含「其他隱藏通路 (MOMO/金石堂)」的係數修正。</li>
+                        </ul>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const RATES = {
+            books: { "0": 0, "1-5": 16, "6-20": 7, "21-50": 2.2, "51-100": 0.8 },
+            eslite: { "0": 0, "1-5": 11, "6-20": 5, "21-50": 1.5, "51-100": 0.5 },
+            tenlong: { "0": 0, "1-5": 9, "6-20": 3.5, "21-50": 1.5, "51-100": 0.5 }
+        };
+
+        const OPTIONS = [
+            { val: "0", text: "未進榜" },
+            { val: "1-5", text: "Top 1-5" },
+            { val: "6-20", text: "Top 6-20" },
+            { val: "21-50", text: "Top 21-50" },
+            { val: "51-100", text: "Top 51-100" }
+        ];
+
+        // Initialization
+        function init() {
+            const selects = document.querySelectorAll('select');
+            selects.forEach(sel => {
+                OPTIONS.forEach(opt => {
+                    // Determine limits for Eslite/Tenlong (they don't have 51-100 in data model sometimes, but keeping consistent UI is better)
+                    if ((sel.id.startsWith('e') || sel.id.startsWith('t')) && opt.val === '51-100') {
+                        // Skip 51-100 for Eslite/Tenlong if data model suggests low val, but let's keep it for UI symmetry, logic will handle it
+                    }
+                    const el = document.createElement('option');
+                    el.value = opt.val;
+                    el.innerText = opt.text;
+                    sel.appendChild(el);
+                });
+                // Defaults
+                sel.value = "0";
+            });
+
+            // Set Default demo values for user to see something initially
+            document.getElementById('b7').value = "21-50";
+            document.getElementById('b30').value = "21-50";
+            document.getElementById('e7').value = "6-20";
+            document.getElementById('t7').value = "6-20";
+
+            updateCalc();
+        }
+
+        // Main Calculator
+        function updateCalc() {
+            // 1. Get Rates
+            const r_b7 = RATES.books[document.getElementById('b7').value];
+            const r_b30 = RATES.books[document.getElementById('b30').value];
+            const r_e7 = RATES.eslite[document.getElementById('e7').value];
+            const r_e30 = RATES.eslite[document.getElementById('e30').value];
+            const r_t7 = RATES.tenlong[document.getElementById('t7').value];
+            const r_t30 = RATES.tenlong[document.getElementById('t30').value];
+
+            // 2. Calc 7 Days (Short term velocity)
+            const dailySum_7 = r_b7 + r_e7 + r_t7;
+            const other_7 = dailySum_7 > 0 ? Math.max(0.5, dailySum_7 * 0.15) : 0;
+            const totalDaily_7 = dailySum_7 + other_7;
+
+            const w_low = Math.round(totalDaily_7 * 7 * 0.8);
+            const w_high = Math.round(totalDaily_7 * 7 * 1.25);
+            document.getElementById('val-7').textContent = (w_high > 0) ? `${w_low} - ${w_high}` : "0";
+
+            // 3. Calc 30 Days (Baseline for Annual)
+            // Logic: Month Estimate = Max(Rank30 Rate * 30, Rank7 Rate * 7)
+            const getM = (r30, r7) => Math.max(r30 * 30, r7 * 7);
+
+            const m_base = getM(r_b30, r_b7) + getM(r_e30, r_e7) + getM(r_t30, r_t7);
+            const m_other = m_base > 0 ? Math.max(1, m_base * 0.15) : 0;
+            const total_m = m_base + m_other;
+
+            const m_low = Math.round(total_m * 0.8);
+            const m_high = Math.round(total_m * 1.25);
+            document.getElementById('val-30').textContent = (m_high > 0) ? `${m_low} - ${m_high}` : "0";
+
+            // 4. Annual Forecast
+            // Baseline: Use the "Low" end of monthly estimate to be safe for Conservative, Mid for Likely?
+            // Let's use the range center for multipliers, then output ranges.
+            // Actually, let's just apply multipliers to the m_low and m_high to keep Range consistency.
+
+            // Multipliers based on Research
+            // Conservative: x6 (Heavy decay)
+            // Likely: x9 (Standard Tail)
+            // Optimistic: x11 (Sustained)
+
+            const fmtY = (mul) => {
+                if (total_m === 0) return "-";
+                const y_low = Math.round(m_low * mul);
+                const y_high = Math.round(m_high * mul);
+                return `${y_low.toLocaleString()} ~ ${y_high.toLocaleString()}`;
+            };
+
+            document.getElementById('f-cons').textContent = fmtY(6);
+            document.getElementById('f-likely').textContent = fmtY(9);
+            document.getElementById('f-opt').textContent = fmtY(11);
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+
+    </script>
+
+</body>
+
+</html>
